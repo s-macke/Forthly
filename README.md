@@ -5,7 +5,7 @@
 This is just another Forth implementation. This time in Go and compiled to WebAssembly.
 
 Forth is such a simple language that it is easy to implement in comparison to other languages.
-Once the basic commands are defined, the rest is just [bootstrapped](src/forthly/bootstrap.fth)
+Once the basic commands are defined, the rest is just [bootstrapped](src/bootstrap.fth)
 
 ## Tutorial
 One of the best tutorials for the Forth language can be found here
