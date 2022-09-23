@@ -30,17 +30,15 @@ type Forth struct {
 var bootstrap string
 
 // NewForth creates the Forth environment
-func NewForth() *Forth {
+func NewForth(_debug bool) *Forth {
 	var f = new(Forth)
-	f.heap = make([]any, 1000)
+	f.heap = make([]any, 10000)
 	f.expectInput = true
-	f.debug = false
+	f.debug = _debug
 
 	f.Init()
 	f.Reset()
-	//fmt.Println(f.HeapDump())
 
-	f.debug = false
 	result, err := f.Exec(bootstrap)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -48,7 +46,6 @@ func NewForth() *Forth {
 		fmt.Println(result)
 	}
 
-	f.debug = false
 	return f
 }
 
@@ -71,7 +68,7 @@ func errorHandler(r interface{}) error {
 	case error:
 		return r.(error)
 	default:
-		return errors.New("Unknown error type")
+		return errors.New("unknown error type")
 	}
 }
 
@@ -90,7 +87,6 @@ func (f *Forth) Exec(command string) (result string, err error) {
 	}()
 
 	// main loop, just exit in case of the blocking KEY word
-	f.debug = true
 	f.output = ""
 	f.input = []rune(command)
 	f.expectInput = false

@@ -4,71 +4,155 @@
     <title>Forthly</title>
     <meta charset="utf-8">
 
-    <style type="text/css" media="screen">
-        #editor {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-        }
-    </style>
+    <style>
+        @media (orientation: landscape) {
+            html, body {
+                overflow: hidden;
+                font-family: monospace;
+            }
 
+            .grid-container {
+                display: grid;
+                width: 100%;
+                height: 100%;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 3vh 85vh;
+                grid-column-gap: 5px;
+                grid-row-gap: 0px;
+                grid-template-areas:
+                        "menu menu"
+                        "div1 div2";
+            }
+        }
+
+        @media (orientation: portrait) {
+            .grid-container {
+                display: grid;
+                width: 100%;
+                height: 90vh;
+                grid-template-rows: 3vh auto auto;
+                grid-template-columns: 100%;
+                /*grid-column-gap: 5px;*/
+                grid-row-gap: 5px;
+                grid-template-areas: "menu" "div1" "div2";
+            }
+        }
+
+        #editor {
+            grid-area: div1;
+            border-color: black;
+            border-style: solid;
+            border-width: thin;
+
+        }
+
+        #result {
+            grid-area: div2;
+            overflow: auto;
+        }
+
+        #menu {
+            grid-area: menu;
+            background-color: #f1f1f1;
+            padding: 10px;
+        }
+
+        .border {
+            border-color: black;
+            border-style: solid;
+            border-width: thin;
+        }
+
+        .btn {
+            color: #fff;
+            background-color: #28a745;
+            /*border-color: #28a745;*/
+            border: 3px solid transparent;
+            display: inline-block;
+            /*font-family: inherit;*/
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.0;
+            border-radius: .25rem;
+        }
+
+        .btn:hover {
+            background-color: #208735;
+            transition: 0.7s;
+        }
+
+        .btn:focus {
+            outline-color: transparent;
+            outline-style:solid;
+            box-shadow: 0 0 0 2px #208735;
+        }
+
+        .btn:not(:disabled):not(.disabled) {
+            cursor: pointer;
+        }
+
+        #headline {
+            vertical-align: middle;
+            padding-right: 5px;
+            font-weight: 400;
+            font-size: 1.5rem;
+            font-family-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+            font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+            display: inline-block;
+        }
+
+        #preresult {
+            white-space: pre-wrap;
+        }
+
+    </style>
+<!--
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+-->
 </head>
 <body>
 
-<main>
-    <div class="container">
-        <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-                <span class="fs-4">Forthly</span>
-            </a>
-            <select class="form-select" id="country">
-                <option value="">Choose...</option>
-                <option>United States</option>
-            </select>
-            <ul class="nav nav-pills">
-                <li class="nav-item"><a href="#" class="nav-link active" aria-current="page">Run</a></li>
-            </ul>
-        </header>
-    </div>
-        <!--
-        <div class="row">
-            <div class="col-md-12">
-                <h1>Forthly</h1>
-            </div>
-        </div>
-        -->
-        <!--
-        <div class="row">
-            <div class="col-md-12">
-                <div id="editor"></div>
-            </div>
-        </div>
-        -->
-    </div>
-</main>
+<div id="menu">
+    <div id="headline">Forthly</div>
+    <button id="runbutton" type="button" class="btn">Run</button>
 
-<!--
-<div id="editor">.s
-2 3 + .
-.s</div>
--->
+    <select id="exampleselect" style="vertical-align: middle;" onchange="onexampleselect();">
+        <option value="none" selected disabled hidden>Examples</option>
+        <option value="hello.f">Hello</option>
+        <option value="calc.f">Simple Calculations</option>
+        <option value="faculty.f">Faculty calculation</option>
+        <option value="isPrime.f">Is Prime</option>
+        <option value="printEachChar.f">Print each charater of string</option>
+        <option value="reverse.f">Reverse String</option>
+        <option value="rot13.f">Rot 13</option>
+        <option value="dump.f">Dump</option>
 
-<!--
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
--->
-<script src="assets/bootstrap/js/bootstrap.min.js"></script>
-<!--
+    </select>
+
+    <img src="assets/GitHub-Mark-64px.png" width="25px" style="vertical-align: middle; float: right">
+</div>
+<div class="grid-container">
+
+    <div id="editor" class="border">
+    </div>
+
+<div id="result" class="ace_editor border">
+    <pre id="preresult"></pre>
+</div>
+
+</div>
+
 <script src="assets/ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
-    var editor = ace.edit("editor");
-    editor.setTheme("ace/theme/monokai");
+    let editor = ace.edit("editor");
+    editor.setTheme("ace/theme/chrome");
     editor.session.setMode("ace/mode/forth");
 </script>
--->
 
 <script src="assets/wasm_exec.js"></script>
 <script>
@@ -85,24 +169,46 @@
     .then((result) => {
         mod = result.module;
         inst = result.instance;
-        run();
-        //document.getElementById("runButton").disabled = false;
+        init();
     })
     .catch((err) => {
         console.error(err);
     });
 
-    async function run() {
+    async function init() {
         console.clear();
-        //await go.run(inst);
-        go.run(inst);
-        console.log(ExecFunc("1 2 + ."));
+        go.run(inst); // don't await
+        //document.getElementById("result").innerHTML = ExecFunc("1 2 + .");
         inst = await WebAssembly.instantiate(mod, go.importObject); // reset instance
     }
+
+    function execute() {
+        document.getElementById("preresult").innerText = ExecFunc(editor.getValue());
+    }
+
+    document.getElementById("runbutton").addEventListener("click", execute);
+
 </script>
 
+<script>
+    function onexampleselect() {
+        let select = document.getElementById("exampleselect")
+        let filename = select.value;
+        if (filename === "none") {
+            return;
+        }
+        select.selectedIndex = 0;
+        LoadForthFile(filename)
+    }
 
+    function LoadForthFile(filename) {
+        fetch("examples/" + filename)
+            .then(response => response.text())
+            .then(text => editor.setValue(text));
+    }
+    LoadForthFile("hello.f")
 
+</script>
 
 </body>
 </html>

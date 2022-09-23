@@ -5,7 +5,6 @@ import (
 )
 
 func main() {
-	f := forth.NewForth()
-	f.SetDebug(true)
+	f := forth.NewForth(false)
 	f.CmdLine()
 }

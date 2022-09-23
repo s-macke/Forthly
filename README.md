@@ -1,35 +1,100 @@
 # Forthly
-Tiny Forth implementation in Go
 
-## Other implementations
+# **[Click to run][project demo]**
+
+This is just another Forth implementation. This time in Go and compiled to WebAssembly.
+
+Forth is such a simple language that it is easy to implement in comparison to other languages.
+Once the basic commands are defined, the rest is just [bootstrapped](src/forthly/bootstrap.fth)
+
+## Tutorial
+One of the best tutorials for the Forth language can be found here
+
+https://www.forth.com/starting-forth/
+
+## The Heap
+
+The heap is the most important data object in Forth. It contains data and code. 
+Here it is just implemented as an array of `interface{}` or any.
+
+```Go
+heap        []any
+```
+
+Just call `dump` to see the contents of the heap. 
+
+## How to run
+
+To compile a standalone executable just run
+
+```bash
+cd src 
+go build -o forthly 
+cd ..
+```
+
+otherwise compile it by running `./build.sh`
+
+## Other implementations or documentations
 
 https://github.com/howerj/libforth
+
 https://github.com/bshepherdson/fcc
+
 https://gist.github.com/lbruder/10007431
+
 https://github.com/larsbrinkhoff/forth-compiler
+
 https://github.com/vbocan/delta-forth
+
 https://github.com/Reschivon/movForth
+
 https://github.com/kragen/stoneknifeforth
+
 https://github.com/zevv/zForth
+
 https://github.com/nornagon/jonesforth
+
 https://github.com/sayon/forthress
+
 https://github.com/philburk/pforth
+
 https://github.com/larsbrinkhoff/xForth
+
 https://gist.github.com/mbillingr/c2bdca4f618974e7e8d1449aba792b41
+
 https://github.com/benhoyt/third
-https://groups.google.com/g/comp.lang.forth/c/lBYFfVJ1qhc/m/BxvaTHCX_JgJ
+
 https://github.com/pzembrod/cc64
+
 https://github.com/jkotlinski/durexforth
+
 https://github.com/jkotlinski/acmeforth
+
 https://github.com/skx/foth
+
 https://github.com/unixdj/forego
+
 https://forth.neocities.org/bootstrap/
-https://forth-standard.org/
+
 http://lars.nocrew.org/forth2012/index.html
+
 http://lars.nocrew.org/forth2012/core/PARSE.html
+
 https://compilercrim.es/bootstrap/miniforth/
+
 https://github.com/nineties/planckforth
+
 https://bootstrapping.miraheze.org/wiki/Forth
+
 https://github.com/tehologist/forthkit
-https://github.com/topics/forth?l=c&o=desc&s=updated
+
 https://github.com/hcchengithub/eforth-x86-64bits
+
+https://github.com/mitra42/webForth
+
+https://github.com/topics/forth?l=c&o=desc&s=updated
+
+https://forth-standard.org/
+
+[project demo]: https://s-macke.github.io/Forthly/

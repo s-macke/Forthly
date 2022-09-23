@@ -47,7 +47,6 @@ func (f *Forth) HeapDump() string {
 		case func():
 		default:
 			sb.WriteString(fmt.Sprintf("Unknown type %v", v))
-
 		}
 		sb.WriteString(fmt.Sprintf("\n"))
 	}
@@ -57,9 +56,14 @@ func (f *Forth) HeapDump() string {
 
 func (f *Forth) State() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("program address at 0x%04x\n", f.currentProgramAddress))
+	sb.WriteString(fmt.Sprintf("program address 0x%04x\n", f.currentProgramAddress))
 	sb.WriteString(fmt.Sprintf("Stack: %v\n", f.stack))
 	sb.WriteString(fmt.Sprintf("Return Stack: %v\n", f.returnStack))
+	slice := 50
+	if len(f.input)-2 < slice {
+		slice = len(f.input) - 2
+	}
+	//sb.WriteString(fmt.Sprintf("input string:\n '%s'\n", string(f.input[:slice])))
 	return sb.String()
 }
 

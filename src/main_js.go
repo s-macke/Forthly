@@ -8,11 +8,10 @@ import (
 
 func execFunc(this js.Value, args []js.Value) interface{} {
 	command := args[0].String()
-	f := forth.NewForth()
-	f.SetDebug(true)
+	f := forth.NewForth(false)
 	result, err := f.Exec(command)
 	if err != nil {
-		return "Error: " + err.Error()
+		return result + "\n" + "Error: " + err.Error() + "\n" + f.State()
 	} else {
 		return result
 	}

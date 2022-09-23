@@ -17,11 +17,10 @@ loop
 drop
 ;
 
+: print 2dup type cr ;
 
-s" This is a string"
-2dup
-.s
-rot13
-.s
+s" ThisIsAString"
+print
 
-cr type
+2dup rot13 print
+2dup rot13 print

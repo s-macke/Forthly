@@ -1,12 +1,25 @@
 : ?Prime
   dup
-  3 do
+  2 do
     dup i mod
-    0= if 0 unloop exit then
+    0= if drop false unloop exit then
   loop
-  -1
+  drop true
 ;
 
-11 ?Prime .
+: .bool
+    IF
+    ." true" cr
+    ELSE
+    ." false" cr
+    THEN
+;
 
-( unloop is the same as r> r> drop drop )
+: primeloop
+  3 do
+    i dup ?Prime OVER . .bool drop
+  loop ;
+
+20 primeloop
+
+

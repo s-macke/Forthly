@@ -3,6 +3,7 @@ package forth
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 const LATESTp = 0
@@ -72,8 +73,9 @@ func (f *Forth) booleanPush(result bool) {
 
 // ParseCAddr parses a so called c-addr string.
 // Given an address on the stack,
-//    the first byte is the size of the string,
-//    followed by the string.
+//
+//	the first byte is the size of the string,
+//	followed by the string.
 func (f *Forth) ParseCAddr() string {
 	buffer := f.stack.Pop()
 	length := f.heap[buffer].(int)
@@ -107,7 +109,7 @@ func (f *Forth) Find(word string) int {
 	latest := f.heap[LATESTp].(int)
 	for latest != 0 {
 		w := f.heap[latest].(*Word)
-		if w.name == word {
+		if strings.ToLower(w.name) == strings.ToLower(word) {
 			return latest
 		}
 		latest = w.link
@@ -125,6 +127,7 @@ func (f *Forth) NewParserWord() {
 	index := 0
 	debugstr := ""
 
+	// store of 32 bytes
 	for i := 0; i < 32; i++ {
 		here := f.heap[HEREp].(int)
 		f.heap[here] = 0
@@ -222,11 +225,13 @@ func (f *Forth) setPrimitives() {
 
 	f.NewPrimitiveWord("@", func() { f.stack.Push(f.heap[f.stack.Pop()].(int)); f.next() })
 	f.NewPrimitiveWord("!", func() { address := f.stack.Pop(); f.heap[address] = f.stack.Pop(); f.next() })
+	f.NewPrimitiveWord("!w", func() { address := f.stack.Pop(); f.heap[address] = pWord(f.stack.Pop()); f.next() })
 
 	f.NewPrimitiveWord("+", func() { f.stack.Push(f.stack.Pop() + f.stack.Pop()); f.next() })
 	f.NewPrimitiveWord("*", func() { f.stack.Push(f.stack.Pop() * f.stack.Pop()); f.next() })
 	f.NewPrimitiveWord("-", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() - temp); f.next() })
 	f.NewPrimitiveWord("/", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() / temp); f.next() })
+	f.NewPrimitiveWord("mod", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() % temp); f.next() })
 
 	f.NewPrimitiveWord("AND", func() { f.stack.Push(f.stack.Pop() & f.stack.Pop()); f.next() })
 	f.NewPrimitiveWord("OR", func() { f.stack.Push(f.stack.Pop() | f.stack.Pop()); f.next() })
@@ -238,8 +243,18 @@ func (f *Forth) setPrimitives() {
 
 	f.NewPrimitiveWord(">R", func() { f.returnStack.Push(f.stack.Pop()); f.next() })
 	f.NewPrimitiveWord("R>", func() { f.stack.Push(f.returnStack.Pop()); f.next() })
+	f.NewPrimitiveWord("RPICK", func() { f.stack.Push(f.returnStack.Get(f.stack.Pop())); f.next() })
+	f.NewPrimitiveWord("RDROP", func() { f.returnStack.Pop(); f.next() })
 
 	f.NewPrimitiveWord("LIT", func() { f.stack.Push(f.heap[f.currentProgramAddress+1].(int)); f.next(); f.next() })
+	f.NewPrimitiveWord("LITSTRING", func() {
+		address := f.currentProgramAddress + 2
+		f.stack.Push(address)
+		length := f.heap[f.currentProgramAddress+1].(int)
+		f.stack.Push(length)
+		f.currentProgramAddress += length + 1
+		f.next()
+	})
 
 	f.NewPrimitiveWord("BRANCH", func() {
 		f.next()
@@ -319,23 +334,9 @@ func (f *Forth) setPrimitives() {
 		f.next()
 	})
 
-	f.NewPrimitiveWord(",", func() {
-		here := f.heap[HEREp].(int)
-		f.heap[here] = f.stack.Pop()
-		f.IncHere(1)
-		f.next()
-	})
-
-	f.NewPrimitiveWord(",c", func() { // special compile word for words. Necessary because of the typing of the heap
-		here := f.heap[HEREp].(int)
-		f.heap[here] = pWord(f.stack.Pop())
-		f.IncHere(1)
-		f.next()
-	})
-
 	f.NewPrimitiveWord(".", func() { f.output += fmt.Sprintf("%d ", f.stack.Pop()); f.next() })
 
-	f.NewPrimitiveWord("'", func() {
+	f.NewPrimitiveWord("'", func() { // TICK word
 		f.next()
 		f.stack.Push(int(f.heap[f.currentProgramAddress].(pWord)))
 		f.next()
@@ -344,12 +345,12 @@ func (f *Forth) setPrimitives() {
 	f.NewPrimitiveWord("DROP", func() { f.stack.Pop(); f.next() })
 	f.NewPrimitiveWord("SWAP", func() { temp, temp2 := f.stack.Pop(), f.stack.Pop(); f.stack.Push(temp); f.stack.Push(temp2); f.next() })
 	f.NewPrimitiveWord("DUP", func() { temp := f.stack.Pop(); f.stack.Push(temp); f.stack.Push(temp); f.next() })
-	f.NewPrimitiveWord("OVER", func() {
-		temp := f.stack.Pop()
-		temp2 := f.stack.Pop()
-		f.stack.Push(temp2)
-		f.stack.Push(temp)
-		f.stack.Push(temp2)
+
+	f.NewPrimitiveWord(".S", func() {
+		f.output += fmt.Sprintf("<%d> ", f.stack.Size())
+		for _, e := range f.stack {
+			f.output += fmt.Sprint(e, " ")
+		}
 		f.next()
 	})
 
@@ -389,11 +390,11 @@ func (f *Forth) InitHeao() {
 
 	// Set two of the most important variables, LATEST and HERE
 	f.heap[LATESTp] = 4 // LATEST: Points to the latest (most recently defined) word in the dictionary.
-	f.heap[1] = &Word{link: 0, immediate: false, hidden: false, name: "LATEST"}
+	f.heap[1] = &Word{link: 0, immediate: false, hidden: false, name: "&LATEST"}
 	f.heap[2] = func() { f.stack.Push(LATESTp); f.next() }
 
 	f.heap[HEREp] = 6 // HERE: Points to the next free byte of memory.  When compiling, compiled words go here.
-	f.heap[4] = &Word{link: 1, immediate: false, hidden: false, name: "HERE"}
+	f.heap[4] = &Word{link: 1, immediate: false, hidden: false, name: "&HERE"}
 	f.heap[5] = func() { f.stack.Push(HEREp); f.next() }
 
 	// Now we can use the easier NewPrimitiveWord and NewIntVariable
@@ -416,6 +417,23 @@ func (f *Forth) Init() {
 		})
 		f.next()
 	}})
+
+	// this is a crazy function
+	f.NewPrimitiveWord("DOES>", func() {
+		latest := f.heap[LATESTp].(int)
+		currentAddress := f.currentProgramAddress // the address of DOES>
+		f.heap[latest+1] = func() {
+			// push current address to the return stack, so that the EXIT statement can return to the correct address
+			f.returnStack.Push(f.currentProgramAddress)
+			// first replicate the CREATE functionality
+			f.stack.Push(latest + 2)
+			// then jump to the first word after the >DOES word
+			f.currentProgramAddress = currentAddress + 1
+		}
+		// exit the function here, everything after >DOES is ignored
+		f.currentProgramAddress = f.returnStack.Pop()
+		f.next()
+	})
 
 	// TODO HIDE
 	f.NewWord(":", []any{"CREATE", "CODE", func() {
