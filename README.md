@@ -2,13 +2,15 @@
 
 # **[Click to run][project demo]**
 
-This is just another Forth implementation. This time in Go and compiled to WebAssembly.
+This is just another Forth implementation.
 
-Forth is such a simple language that it is easy to implement in comparison to other languages.
-Once the basic commands are defined, the rest is just [bootstrapped](src/forth/bootstrap.fth)
+- Written in Go and compiled to WebAssembly.
+- [Bootstrapped](src/forth/bootstrap.fth) after the initialization of some [primitive](src/forth/primitives.go) words
+- Rudimentary type checking to differ between functions, pointer to words and ints.
 
 ## Tutorial
-One of the best tutorials for the Forth language can be found here
+If you are unfamiliar with Forth, try the following tutorial.
+It is one of the best.
 
 https://www.forth.com/starting-forth/
 
@@ -29,8 +31,7 @@ To compile a standalone executable just run
 
 ```bash
 cd src 
-go build -o forthly 
-cd ..
+go build 
 ```
 
 otherwise compile it by running `./build.sh`

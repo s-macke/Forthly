@@ -2,7 +2,7 @@ package forth
 
 // Representation of a word on the stack
 type Word struct {
-	link      int
+	link      pWord
 	immediate bool
 	hidden    bool
 	name      string

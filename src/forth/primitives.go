@@ -15,17 +15,17 @@ func (f *Forth) IncHere(inc int) {
 
 func (f *Forth) NewPrimitiveWord(name string, _f func()) {
 	here := f.heap[HEREp].(int)
-	latest := f.heap[LATESTp].(int)
+	latest := f.heap[LATESTp].(pWord)
 	f.heap[here] = &Word{link: latest, immediate: false, hidden: false, name: name}
 	f.heap[here+1] = _f
-	f.heap[LATESTp] = here
+	f.heap[LATESTp] = pWord(here)
 	f.IncHere(2)
 }
 
 func (f *Forth) NewWord(name string, words []any) {
 	f.NewPrimitiveWord(name, func() { // DOCOL
-		f.returnStack.Push(f.currentProgramAddress)
-		f.currentProgramAddress = f.currentProgramWord + 1
+		f.returnStack.Push(pWord(f.currentProgramAddress))
+		f.currentProgramAddress = int(f.currentProgramWord) + 1
 		f.next()
 	})
 	words = append(words, "EXIT")
@@ -52,7 +52,7 @@ func (f *Forth) NewWord(name string, words []any) {
 
 func (f *Forth) NewImmediateWord(name string, words []any) {
 	f.NewWord(name, words)
-	latest := f.heap[LATESTp].(int)
+	latest := f.heap[LATESTp].(pWord)
 	f.heap[latest].(*Word).immediate = true
 }
 
@@ -77,7 +77,7 @@ func (f *Forth) booleanPush(result bool) {
 //	the first byte is the size of the string,
 //	followed by the string.
 func (f *Forth) ParseCAddr() string {
-	buffer := f.stack.Pop()
+	buffer := f.stack.Pop().(int)
 	length := f.heap[buffer].(int)
 	buffer++
 	str := ""
@@ -87,26 +87,13 @@ func (f *Forth) ParseCAddr() string {
 	return str
 }
 
-/*
-func (f *Forth) Find(word string) *Word {
-	latest := f.heap[LATESTp].(int)
-	for latest != 0 {
-		w := f.heap[latest].(*Word)
-		if w.name == word {
-			return &w
+func (f *Forth) Find(word string) pWord {
+	/*
+		if f.debug {
+			fmt.Println("Debug: FIND " + word)
 		}
-		latest = w.link
-	}
-	return nil
-}
-*/
-
-func (f *Forth) Find(word string) int {
-	if f.debug {
-		fmt.Println("Debug: FIND " + word)
-	}
-
-	latest := f.heap[LATESTp].(int)
+	*/
+	latest := f.heap[LATESTp].(pWord)
 	for latest != 0 {
 		w := f.heap[latest].(*Word)
 		if strings.ToLower(w.name) == strings.ToLower(word) {
@@ -122,7 +109,7 @@ func (f *Forth) NewParserWord() {
 
 	f.NewWord("WORD", []any{"KEY", "CODE", "NOP", "KEY", "CODE", "NOP"})
 
-	latest := f.heap[LATESTp].(int)
+	latest := f.heap[LATESTp].(pWord)
 	wordbuffer := f.heap[HEREp].(int)
 	index := 0
 	debugstr := ""
@@ -135,7 +122,7 @@ func (f *Forth) NewParserWord() {
 	}
 
 	f.heap[latest+4] = func() {
-		key := f.stack.Pop()
+		key := f.stack.Pop().(int)
 		if key == ' ' || key == '\n' || key == '\t' {
 			f.currentProgramAddress -= 2 // Repeat the key word. the program address still points to the CODE word.
 		} else {
@@ -148,7 +135,7 @@ func (f *Forth) NewParserWord() {
 	}
 
 	f.heap[latest+7] = func() {
-		key := f.stack.Pop()
+		key := f.stack.Pop().(int)
 		if key != ' ' && key != '\n' && key != '\t' {
 			f.heap[wordbuffer+index] = key
 			debugstr += string(rune(key))
@@ -167,11 +154,11 @@ func (f *Forth) NewParserWord() {
 
 func (f *Forth) NewInterpretWord() {
 	f.NewWord("INTERPRET", []any{"[", "WORD", "FIND", "CODE", "NOP", "EXECUTE", "CODE", "NOP"})
-	latest := f.heap[LATESTp].(int)
+	latest := f.heap[LATESTp].(pWord)
 
 	f.heap[latest+6] = func() {
 		STATE := f.heap[f.Find("STATE")+2].(int) // interpreter or compile mode
-		status := f.stack.Pop()                  // retrieve results from the FIND word
+		status := f.stack.Pop().(int)            // retrieve results from the FIND word
 
 		if STATE == 0 { // interpreter mode
 
@@ -205,7 +192,7 @@ func (f *Forth) NewInterpretWord() {
 			case 1: // IMMEDIATE word found
 				f.next() // just execute the word on the stack
 			case -1: // copy the word to the heap
-				f.heap[here] = pWord(f.stack.Pop())
+				f.heap[here] = f.stack.Pop().(pWord) // must be pWord
 				f.IncHere(1)
 				f.currentProgramAddress -= 3 // Repeat the 'word' word.
 			default:
@@ -223,27 +210,27 @@ func (f *Forth) NewInterpretWord() {
 func (f *Forth) setPrimitives() {
 	f.NewPrimitiveWord("NOP", func() {})
 
-	f.NewPrimitiveWord("@", func() { f.stack.Push(f.heap[f.stack.Pop()].(int)); f.next() })
-	f.NewPrimitiveWord("!", func() { address := f.stack.Pop(); f.heap[address] = f.stack.Pop(); f.next() })
-	f.NewPrimitiveWord("!w", func() { address := f.stack.Pop(); f.heap[address] = pWord(f.stack.Pop()); f.next() })
+	f.NewPrimitiveWord("@", func() { f.stack.Push(f.heap[f.stack.Pop().(int)]); f.next() })
+	f.NewPrimitiveWord("!", func() { address := f.stack.Pop().(int); f.heap[address] = f.stack.Pop(); f.next() })
+	f.NewPrimitiveWord("!w", func() { address := f.stack.Pop().(int); f.heap[address] = f.stack.Pop().(pWord); f.next() })
 
-	f.NewPrimitiveWord("+", func() { f.stack.Push(f.stack.Pop() + f.stack.Pop()); f.next() })
-	f.NewPrimitiveWord("*", func() { f.stack.Push(f.stack.Pop() * f.stack.Pop()); f.next() })
-	f.NewPrimitiveWord("-", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() - temp); f.next() })
-	f.NewPrimitiveWord("/", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() / temp); f.next() })
-	f.NewPrimitiveWord("mod", func() { temp := f.stack.Pop(); f.stack.Push(f.stack.Pop() % temp); f.next() })
+	f.NewPrimitiveWord("+", func() { f.stack.Push(f.stack.Pop().(int) + f.stack.Pop().(int)); f.next() })
+	f.NewPrimitiveWord("*", func() { f.stack.Push(f.stack.Pop().(int) * f.stack.Pop().(int)); f.next() })
+	f.NewPrimitiveWord("-", func() { temp := f.stack.Pop().(int); f.stack.Push(f.stack.Pop().(int) - temp); f.next() })
+	f.NewPrimitiveWord("/", func() { temp := f.stack.Pop().(int); f.stack.Push(f.stack.Pop().(int) / temp); f.next() })
+	f.NewPrimitiveWord("mod", func() { temp := f.stack.Pop().(int); f.stack.Push(f.stack.Pop().(int) % temp); f.next() })
 
-	f.NewPrimitiveWord("AND", func() { f.stack.Push(f.stack.Pop() & f.stack.Pop()); f.next() })
-	f.NewPrimitiveWord("OR", func() { f.stack.Push(f.stack.Pop() | f.stack.Pop()); f.next() })
-	f.NewPrimitiveWord("XOR", func() { f.stack.Push(f.stack.Pop() ^ f.stack.Pop()); f.next() })
-	f.NewPrimitiveWord("INVERT", func() { f.stack.Push(^f.stack.Pop()); f.next() })
+	f.NewPrimitiveWord("AND", func() { f.stack.Push(f.stack.Pop().(int) & f.stack.Pop().(int)); f.next() })
+	f.NewPrimitiveWord("OR", func() { f.stack.Push(f.stack.Pop().(int) | f.stack.Pop().(int)); f.next() })
+	f.NewPrimitiveWord("XOR", func() { f.stack.Push(f.stack.Pop().(int) ^ f.stack.Pop().(int)); f.next() })
+	f.NewPrimitiveWord("INVERT", func() { f.stack.Push(^f.stack.Pop().(int)); f.next() })
 
-	f.NewPrimitiveWord("<", func() { temp := f.stack.Pop(); f.booleanPush(f.stack.Pop() < temp); f.next() })
+	f.NewPrimitiveWord("<", func() { temp := f.stack.Pop().(int); f.booleanPush(f.stack.Pop().(int) < temp); f.next() })
 	f.NewPrimitiveWord("=", func() { f.booleanPush(f.stack.Pop() == f.stack.Pop()); f.next() })
 
 	f.NewPrimitiveWord(">R", func() { f.returnStack.Push(f.stack.Pop()); f.next() })
 	f.NewPrimitiveWord("R>", func() { f.stack.Push(f.returnStack.Pop()); f.next() })
-	f.NewPrimitiveWord("RPICK", func() { f.stack.Push(f.returnStack.Get(f.stack.Pop())); f.next() })
+	f.NewPrimitiveWord("RPICK", func() { f.stack.Push(f.returnStack.Get(f.stack.Pop().(int))); f.next() })
 	f.NewPrimitiveWord("RDROP", func() { f.returnStack.Pop(); f.next() })
 
 	f.NewPrimitiveWord("LIT", func() { f.stack.Push(f.heap[f.currentProgramAddress+1].(int)); f.next(); f.next() })
@@ -271,22 +258,23 @@ func (f *Forth) setPrimitives() {
 	})
 
 	f.NewPrimitiveWord("EXIT", func() {
-		f.currentProgramAddress = f.returnStack.Pop()
+		f.currentProgramAddress = int(f.returnStack.Pop().(pWord))
 		f.next()
 	})
 
 	f.NewPrimitiveWord("IMMEDIATE", func() {
-		latest := f.heap[LATESTp].(int)
+		latest := f.heap[LATESTp].(pWord)
 		f.heap[latest].(*Word).immediate = true
 		f.next()
 	})
-	f.heap[f.heap[LATESTp].(int)].(*Word).immediate = true
+	f.heap[f.heap[LATESTp].(pWord)].(*Word).immediate = true
 
 	f.NewPrimitiveWord("EXECUTE", func() {
+		word := f.stack.Pop().(pWord)
 		if f.debug {
-			fmt.Printf("EXECUTE 0x%04x\n", f.stack.Get(0))
+			fmt.Printf("EXECUTE %s\n", f.heap[word].(*Word).name)
 		}
-		f.currentProgramWord = f.stack.Pop()
+		f.currentProgramWord = word
 		f.heap[f.currentProgramWord+1].(func())()
 	})
 
@@ -307,7 +295,7 @@ func (f *Forth) setPrimitives() {
 		buffer := f.stack.Get(0)
 
 		word := f.ParseCAddr()
-		wordp := f.Find(word)
+		wordp := pWord(f.Find(word))
 
 		if wordp == -1 { // Word not found
 			f.stack.Push(buffer)
@@ -329,16 +317,17 @@ func (f *Forth) setPrimitives() {
 		f.next()
 	})
 
+	// TODO: Is this word relevant?
 	f.NewPrimitiveWord(">DFA", func() {
-		f.stack.Push(f.stack.Pop() + 1)
+		f.stack.Push(f.stack.Pop().(int) + 1)
 		f.next()
 	})
 
-	f.NewPrimitiveWord(".", func() { f.output += fmt.Sprintf("%d ", f.stack.Pop()); f.next() })
+	f.NewPrimitiveWord(".", func() { f.output += fmt.Sprintf("%d ", f.stack.Pop().(int)); f.next() })
 
 	f.NewPrimitiveWord("'", func() { // TICK word
 		f.next()
-		f.stack.Push(int(f.heap[f.currentProgramAddress].(pWord)))
+		f.stack.Push(f.heap[f.currentProgramAddress].(pWord))
 		f.next()
 	})
 
@@ -389,7 +378,7 @@ func (f *Forth) setPrimitives() {
 func (f *Forth) InitHeao() {
 
 	// Set two of the most important variables, LATEST and HERE
-	f.heap[LATESTp] = 4 // LATEST: Points to the latest (most recently defined) word in the dictionary.
+	f.heap[LATESTp] = pWord(4) // LATEST: Points to the latest (most recently defined) word in the dictionary.
 	f.heap[1] = &Word{link: 0, immediate: false, hidden: false, name: "&LATEST"}
 	f.heap[2] = func() { f.stack.Push(LATESTp); f.next() }
 
@@ -420,29 +409,29 @@ func (f *Forth) Init() {
 
 	// this is a crazy function
 	f.NewPrimitiveWord("DOES>", func() {
-		latest := f.heap[LATESTp].(int)
+		latest := f.heap[LATESTp].(pWord)
 		currentAddress := f.currentProgramAddress // the address of DOES>
 		f.heap[latest+1] = func() {
 			// push current address to the return stack, so that the EXIT statement can return to the correct address
-			f.returnStack.Push(f.currentProgramAddress)
+			f.returnStack.Push(pWord(f.currentProgramAddress))
 			// first replicate the CREATE functionality
-			f.stack.Push(latest + 2)
+			f.stack.Push(int(latest + 2))
 			// then jump to the first word after the >DOES word
 			f.currentProgramAddress = currentAddress + 1
 		}
 		// exit the function here, everything after >DOES is ignored
-		f.currentProgramAddress = f.returnStack.Pop()
+		f.currentProgramAddress = int(f.returnStack.Pop().(pWord))
 		f.next()
 	})
 
 	// TODO HIDE
 	f.NewWord(":", []any{"CREATE", "CODE", func() {
 		// overwrite default behavior of CREATE with DOCOL
-		latest := f.heap[LATESTp].(int)
+		latest := f.heap[LATESTp].(pWord)
 		f.heap[latest+1] = func() {
 			// DOCOL
-			f.returnStack.Push(f.currentProgramAddress)
-			f.currentProgramAddress = f.currentProgramWord + 1
+			f.returnStack.Push(pWord(f.currentProgramAddress))
+			f.currentProgramAddress = int(f.currentProgramWord) + 1
 			f.next()
 		}
 		f.next()

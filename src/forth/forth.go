@@ -17,8 +17,8 @@ type Forth struct {
 	returnStack stack // not used for the return addresses but for specific features like >r r> and loop parameters
 	heap        []any // ints or words
 
-	currentProgramWord    int // points to the current word being executed
-	currentProgramAddress int // the current word in the heap Forth executes
+	currentProgramWord    pWord // points to the current word being executed
+	currentProgramAddress int   // the current word in the heap Forth executes
 
 	expectInput bool
 	input       []rune
@@ -41,7 +41,8 @@ func NewForth(_debug bool) *Forth {
 
 	result, err := f.Exec(bootstrap)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error during bootstrap:", err)
+		os.Exit(1)
 	} else {
 		fmt.Println(result)
 	}
@@ -78,6 +79,7 @@ func (f *Forth) Exec(command string) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if f.debug {
+				fmt.Println(f.State())
 				debug.PrintStack()
 			}
 			result = f.output
@@ -94,7 +96,7 @@ func (f *Forth) Exec(command string) (result string, err error) {
 		if f.debug {
 			f.PrintExecuteState()
 		}
-		f.currentProgramWord = int(f.heap[f.currentProgramAddress].(pWord))
+		f.currentProgramWord = f.heap[f.currentProgramAddress].(pWord)
 		// indirect threading
 		f.heap[f.currentProgramWord+1].(func())()
 	}

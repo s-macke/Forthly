@@ -57,19 +57,21 @@ func (f *Forth) HeapDump() string {
 func (f *Forth) State() string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("program address 0x%04x\n", f.currentProgramAddress))
-	sb.WriteString(fmt.Sprintf("Stack: %v\n", f.stack))
-	sb.WriteString(fmt.Sprintf("Return Stack: %v\n", f.returnStack))
-	slice := 50
-	if len(f.input)-2 < slice {
-		slice = len(f.input) - 2
-	}
-	//sb.WriteString(fmt.Sprintf("input string:\n '%s'\n", string(f.input[:slice])))
+	sb.WriteString("Stack: " + f.stack.ToString() + "\n")
+	sb.WriteString("Return Stack: " + f.returnStack.ToString() + "\n")
+	/*
+		slice := 50
+		if len(f.input)-2 < slice {
+			slice = len(f.input) - 2
+		}
+		sb.WriteString(fmt.Sprintf("input string:\n '%s'\n", string(f.input[:slice])))
+	*/
 	return sb.String()
 }
 
 func (f *Forth) Words() string {
 	var sb strings.Builder
-	latest := f.heap[LATESTp].(int)
+	latest := f.heap[LATESTp].(pWord)
 	for latest != 0 {
 		word := f.heap[latest].(*Word)
 		sb.WriteString(word.name)

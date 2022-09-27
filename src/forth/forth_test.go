@@ -97,19 +97,7 @@ func TestConstant(t *testing.T) {
 	result, _ = f.Exec("FOO .")
 	assertEqual(t, result, "42")
 	assertStackEmpty(t, f)
-
 }
-
-/*
-func TestConstants(t *testing.T) {
-	f := NewForth()
-	result, _ := f.Exec("100 constant const1")
-	assertEqual(t, result, "")
-
-	result, _ = f.Exec("const1 .")
-	assertEqual(t, result, "100")
-}
-*/
 
 func TestFunc(t *testing.T) {
 	f := NewForth(false)
@@ -225,7 +213,7 @@ func TestRecurse(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	f := NewForth(true)
+	f := NewForth(false)
 	result, _ := f.Exec(": iter 5 0 do i . loop ;")
 	result, _ = f.Exec("iter")
 	assertEqual(t, result, "0 1 2 3 4")
@@ -233,7 +221,7 @@ func TestLoop(t *testing.T) {
 }
 
 func TestRepeat(t *testing.T) {
-	f := NewForth(true)
+	f := NewForth(false)
 	// from http://lars.nocrew.org/forth2012/core/WHILE.html
 	result, _ := f.Exec(": looptest BEGIN DUP 5 < WHILE DUP 1+ REPEAT ;")
 

@@ -1,6 +1,12 @@
 package forth
 
-type stack []int
+import (
+	"fmt"
+	"reflect"
+	"strings"
+)
+
+type stack []any
 
 // IsEmpty checks if stack is empty
 func (s *stack) IsEmpty() bool {
@@ -12,12 +18,12 @@ func (s *stack) Size() int {
 }
 
 // Push a new value onto the stack
-func (s *stack) Push(str int) {
+func (s *stack) Push(str any) {
 	*s = append(*s, str) // Simply append the new value to the end of the stack
 }
 
 // Pop removes and return top element of stack.
-func (s *stack) Pop() int {
+func (s *stack) Pop() any {
 	if s.IsEmpty() {
 		panic("stack is empty")
 	}
@@ -28,10 +34,23 @@ func (s *stack) Pop() int {
 }
 
 // Get returns the n-th element in the Stack
-func (s *stack) Get(idx int) int {
+func (s *stack) Get(idx int) any {
 	return (*s)[len(*s)-idx-1]
 }
 
 func (s *stack) Clear() {
-	*s = make([]int, 0)
+	*s = make([]any, 0)
+}
+
+func (s *stack) ToString() string {
+	var sb strings.Builder
+	sb.WriteString("[")
+	for i := 0; i < len(*s); i++ {
+		sb.WriteString(fmt.Sprint((*s)[i]) + " (" + reflect.TypeOf((*s)[i]).Name() + ")")
+		if i < len(*s)-1 {
+			sb.WriteString(", ")
+		}
+	}
+	sb.WriteString("]")
+	return sb.String()
 }
