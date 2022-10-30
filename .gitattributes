@@ -1,0 +1,8 @@
+*           text=auto
+*.go        text eol=lf
+*.sh        text eol=lf
+*.js        text eol=lf
+*.html      text eol=lf
+*.fth       text eol=lf
+
+*.png binary

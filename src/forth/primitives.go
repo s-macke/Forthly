@@ -101,7 +101,7 @@ func (f *Forth) Find(word string) pWord {
 		}
 		latest = w.link
 	}
-	return -1 // illegal reference if used
+	return pWord(-1) // illegal reference if used
 }
 
 func (f *Forth) NewParserWord() {
