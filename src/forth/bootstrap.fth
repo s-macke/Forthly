@@ -76,11 +76,6 @@
     1 &HERE +!    \ increment HERE pointer by 1 byte
 ;
 
-: ,w              \ special comma operator for words, especially for the Go implementation with type-checking
-    HERE !w       \ store the word pointer in the compiled image
-    1 &HERE +!    \ increment HERE pointer by 1 byte
-;
-
 : C,
     HERE C!       \ store the character in the compiled image
     1 &HERE +!    \ increment HERE pointer by 1 byte
@@ -94,7 +89,7 @@
 : RECURSE IMMEDIATE
     LATEST    \ LATEST points to the word being compiled at the moment
     >CFA      \ get the codeword
-    ,w        \ compile it
+    ,        \ compile it
 ;
 
 \ IF THEN ELSE CONTROL STRUCTURE
@@ -104,11 +99,11 @@
     FIND        \ find it in the dictionary
     DROP        \ drop the result. We assume, that the word is definitely in the dictionary. TODO: check this
     >CFA        \ get its codeword
-    ,w          \ and compile that
+    ,          \ and compile that
 ;
 
 : IF IMMEDIATE
-    ' 0BRANCH ,w      \ compile 0BRANCH
+    ' 0BRANCH ,      \ compile 0BRANCH
     HERE              \ save location of the offset on the stack
     0 ,               \ compile a dummy offset
 ;
@@ -121,7 +116,7 @@
 
 
 : ELSE IMMEDIATE
-    ' BRANCH ,w    \ definite branch to just over the false-part
+    ' BRANCH ,    \ definite branch to just over the false-part
     HERE           \ save location of the offset on the stack
     0 ,            \ compile a dummy offset
     SWAP           \ now back-fill the original (IF) offset
@@ -131,13 +126,13 @@
 ;
 
 : UNLESS IMMEDIATE
-    ' NOT ,w        \ compile NOT (to reverse the test)
+    ' NOT ,        \ compile NOT (to reverse the test)
     [COMPILE] IF    \ continue by calling the normal IF
 ;
 
 
 : LITERAL IMMEDIATE
-    ' LIT ,w    \ compile LIT
+    ' LIT ,    \ compile LIT
     ,           \ compile the literal itself (from the stack)
     ;
 
@@ -163,25 +158,25 @@
 ;
 
 : UNTIL IMMEDIATE
-    ' 0BRANCH ,w    \ compile 0BRANCH
+    ' 0BRANCH ,    \ compile 0BRANCH
     HERE -          \ calculate the offset from the address saved on the stack
     ,               \ compile the offset here
 ;
 
 : AGAIN IMMEDIATE
-    ' BRANCH ,w    \ compile BRANCH
+    ' BRANCH ,    \ compile BRANCH
     HERE -         \ calculate the offset back
     ,              \ compile the offset here
 ;
 
 : WHILE IMMEDIATE
-    ' 0BRANCH ,w    \ compile 0BRANCH
+    ' 0BRANCH ,    \ compile 0BRANCH
     HERE            \ save location of the offset2 on the stack
     0 ,             \ compile a dummy offset2
 ;
 
 : REPEAT IMMEDIATE
-    ' BRANCH ,w    \ compile BRANCH
+    ' BRANCH ,    \ compile BRANCH
     SWAP           \ get the original offset (from BEGIN)
     HERE - ,       \ and compile it after BRANCH
     DUP
@@ -210,28 +205,28 @@
 \ Do Loops
 
 : DO IMMEDIATE
-    ' >r ,w \ save start
-    ' >r ,w \ save limit
+    ' >r , \ save start
+    ' >r , \ save limit
     HERE
 ;
 
 : LOOP IMMEDIATE
-    ' r> ,w      \ get the limit
-    ' r> ,w      \ get the start
-    ' 1+ ,w      \ increment the start
-    ' 2dup ,w    \ duplicate the start and limit
-    ' >r ,w      \ save the new start
-    ' >r ,w      \ save the limit
-    ' = ,w       \ compare the start and limit
-    ' 0branch ,w \ branch if start != limit
+    ' r> ,      \ get the limit
+    ' r> ,      \ get the start
+    ' 1+ ,      \ increment the start
+    ' 2dup ,    \ duplicate the start and limit
+    ' >r ,      \ save the new start
+    ' >r ,      \ save the limit
+    ' = ,       \ compare the start and limit
+    ' 0branch , \ branch if start != limit
     HERE - ,     \ compile the offset
-    ' rdrop ,w   \ drop the limit
-    ' rdrop ,w   \ drop the start
+    ' rdrop ,   \ drop the limit
+    ' rdrop ,   \ drop the start
 ;
 
 : UNLOOP IMMEDIATE
-    ' rdrop ,w   \ drop the limit
-    ' rdrop ,w   \ drop the start
+    ' rdrop ,   \ drop the limit
+    ' rdrop ,   \ drop the start
     ;
 
 : i 2 rpick ;
@@ -285,7 +280,7 @@ drop
 
 : S" IMMEDIATE               \ ( -- addr len )
      STATE @ IF              \ compiling?
-        ' LITSTRING ,w       \ compile LITSTRING
+        ' LITSTRING ,       \ compile LITSTRING
         HERE                 \ save the address of the length word on the stack
         0 ,                  \ dummy length - we don't know what it is yet
         BEGIN
@@ -323,7 +318,7 @@ drop
 : ." IMMEDIATE
     STATE @ IF         \ compiling?
       [COMPILE] S"     \ read the string, and compile LITSTRING, etc. )
-      ' TYPE ,w        \ compile the final TELL )
+      ' TYPE ,        \ compile the final TELL )
     ELSE
         \ In immediate mode, just read characters and print them until we get  to the ending double quote.
         BEGIN
@@ -354,10 +349,10 @@ drop
 ;
 
 : OF IMMEDIATE
-    ' OVER ,w      \ compile OVER
-    ' = ,w           \ compile =
+    ' OVER ,      \ compile OVER
+    ' = ,           \ compile =
     [COMPILE] IF   \ compile IF
-    ' DROP ,w      \ compile DROP )
+    ' DROP ,      \ compile DROP )
 ;
 
 : ENDOF IMMEDIATE
@@ -365,7 +360,7 @@ drop
 ;
 
 : ENDCASE IMMEDIATE
-    ' DROP ,w    \ compile DROP
+    ' DROP ,    \ compile DROP
     \ keep compiling THEN until we get to our zero marker
     BEGIN
         ?DUP

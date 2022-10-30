@@ -96,7 +96,8 @@ func (f *Forth) Find(word string) pWord {
 	latest := f.heap[LATESTp].(pWord)
 	for latest != 0 {
 		w := f.heap[latest].(*Word)
-		if strings.ToLower(w.name) == strings.ToLower(word) {
+
+		if !w.hidden && strings.ToLower(w.name) == strings.ToLower(word) {
 			return latest
 		}
 		latest = w.link
@@ -212,7 +213,6 @@ func (f *Forth) setPrimitives() {
 
 	f.NewPrimitiveWord("@", func() { f.stack.Push(f.heap[f.stack.Pop().(int)]); f.next() })
 	f.NewPrimitiveWord("!", func() { address := f.stack.Pop().(int); f.heap[address] = f.stack.Pop(); f.next() })
-	f.NewPrimitiveWord("!w", func() { address := f.stack.Pop().(int); f.heap[address] = f.stack.Pop().(pWord); f.next() })
 
 	f.NewPrimitiveWord("+", func() { f.stack.Push(f.stack.Pop().(int) + f.stack.Pop().(int)); f.next() })
 	f.NewPrimitiveWord("*", func() { f.stack.Push(f.stack.Pop().(int) * f.stack.Pop().(int)); f.next() })
@@ -343,6 +343,11 @@ func (f *Forth) setPrimitives() {
 		f.next()
 	})
 
+	f.NewPrimitiveWord("DEBUG", func() {
+		f.debug = !f.debug
+		f.next()
+	})
+
 	f.NewPrimitiveWord("DUMP", func() {
 		f.output += f.HeapDump()
 		f.output += f.State()
@@ -428,6 +433,7 @@ func (f *Forth) Init() {
 	f.NewWord(":", []any{"CREATE", "CODE", func() {
 		// overwrite default behavior of CREATE with DOCOL
 		latest := f.heap[LATESTp].(pWord)
+		f.heap[latest].(*Word).hidden = true
 		f.heap[latest+1] = func() {
 			// DOCOL
 			f.returnStack.Push(pWord(f.currentProgramAddress))
@@ -448,6 +454,9 @@ func (f *Forth) Init() {
 	}})
 
 	f.NewImmediateWord(";", []any{"CODE", func() {
+		latest := f.heap[LATESTp].(pWord)
+		f.heap[latest].(*Word).hidden = false
+
 		// set EXIT at the end of the function
 		here := f.heap[HEREp].(int)
 		f.heap[here] = pWord(f.Find("EXIT"))
