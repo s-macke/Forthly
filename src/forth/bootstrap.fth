@@ -87,6 +87,7 @@
 : CONSTANT CREATE , DOES> @ ;
 
 : RECURSE IMMEDIATE
+    ?compile
     LATEST    \ LATEST points to the word being compiled at the moment
     >CFA      \ get the codeword
     ,        \ compile it
@@ -95,6 +96,7 @@
 \ IF THEN ELSE CONTROL STRUCTURE
 
 : [COMPILE] IMMEDIATE     \ compile but don't execute
+    ?compile
     WORD        \ get the next word
     FIND        \ find it in the dictionary
     DROP        \ drop the result. We assume, that the word is definitely in the dictionary. TODO: check this
@@ -103,12 +105,14 @@
 ;
 
 : IF IMMEDIATE
+    ?compile
     ' 0BRANCH ,      \ compile 0BRANCH
     HERE              \ save location of the offset on the stack
     0 ,               \ compile a dummy offset
 ;
 
 : THEN IMMEDIATE
+    ?compile
     DUP
     HERE SWAP -       \ calculate the offset from the address saved on the stack
     SWAP !            \ store the offset in the back-filled location
@@ -116,6 +120,7 @@
 
 
 : ELSE IMMEDIATE
+    ?compile
     ' BRANCH ,    \ definite branch to just over the false-part
     HERE           \ save location of the offset on the stack
     0 ,            \ compile a dummy offset
@@ -126,12 +131,14 @@
 ;
 
 : UNLESS IMMEDIATE
+    ?compile
     ' NOT ,        \ compile NOT (to reverse the test)
     [COMPILE] IF    \ continue by calling the normal IF
 ;
 
 
 : LITERAL IMMEDIATE
+    ?compile
     ' LIT ,    \ compile LIT
     ,           \ compile the literal itself (from the stack)
     ;
@@ -142,6 +149,7 @@
 
 \ compile-time version of char
 : [char] immediate   \ ( compile: <spaces>ccc -- ; runtime: --- c )
+    ?compile
     char
     [compile] literal
 ;
@@ -154,28 +162,33 @@
 \ BEGIN UNTIL CONTROL STRUCTURE
 
 : BEGIN IMMEDIATE
+    ?compile
     HERE          \ save location on the stack
 ;
 
 : UNTIL IMMEDIATE
+    ?compile
     ' 0BRANCH ,    \ compile 0BRANCH
     HERE -          \ calculate the offset from the address saved on the stack
     ,               \ compile the offset here
 ;
 
 : AGAIN IMMEDIATE
+    ?compile
     ' BRANCH ,    \ compile BRANCH
     HERE -         \ calculate the offset back
     ,              \ compile the offset here
 ;
 
 : WHILE IMMEDIATE
+    ?compile
     ' 0BRANCH ,    \ compile 0BRANCH
     HERE            \ save location of the offset2 on the stack
     0 ,             \ compile a dummy offset2
 ;
 
 : REPEAT IMMEDIATE
+    ?compile
     ' BRANCH ,    \ compile BRANCH
     SWAP           \ get the original offset (from BEGIN)
     HERE - ,       \ and compile it after BRANCH
@@ -205,12 +218,14 @@
 \ Do Loops
 
 : DO IMMEDIATE
+    ?compile
     ' >r , \ save start
     ' >r , \ save limit
     HERE
 ;
 
 : LOOP IMMEDIATE
+    ?compile
     ' r> ,      \ get the limit
     ' r> ,      \ get the start
     ' 1+ ,      \ increment the start
@@ -225,6 +240,7 @@
 ;
 
 : UNLOOP IMMEDIATE
+    ?compile
     ' rdrop ,   \ drop the limit
     ' rdrop ,   \ drop the start
     ;
@@ -345,10 +361,12 @@ drop
 \ Switch case
 
 : CASE IMMEDIATE
+    ?compile
     0        \ push 0 to mark the bottom of the stack
 ;
 
 : OF IMMEDIATE
+    ?compile
     ' OVER ,      \ compile OVER
     ' = ,           \ compile =
     [COMPILE] IF   \ compile IF
@@ -356,10 +374,12 @@ drop
 ;
 
 : ENDOF IMMEDIATE
+    ?compile
     [COMPILE] ELSE    \ ENDOF is the same as ELSE
 ;
 
 : ENDCASE IMMEDIATE
+    ?compile
     ' DROP ,    \ compile DROP
     \ keep compiling THEN until we get to our zero marker
     BEGIN
@@ -372,6 +392,15 @@ drop
 \ ( "name" -- xt )
 \ compile time tick
 : ['] IMMEDIATE
+    ?compile
     '                   \ read name and get xt
     [compile] literal   \ call literal
+;
+
+: ABORT" IMMEDIATE
+  ." Abort: "
+  [COMPILE] s"
+  type
+  cr
+  halt
 ;

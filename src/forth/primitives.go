@@ -262,6 +262,11 @@ func (f *Forth) setPrimitives() {
 		f.next()
 	})
 
+	// Just halt the program immediately. Used in Abort
+	f.NewPrimitiveWord("HALT", func() {
+		panic("HALT")
+	})
+
 	f.NewPrimitiveWord("IMMEDIATE", func() {
 		latest := f.heap[LATESTp].(pWord)
 		f.heap[latest].(*Word).immediate = true
@@ -429,7 +434,6 @@ func (f *Forth) Init() {
 		f.next()
 	})
 
-	// TODO HIDE
 	f.NewWord(":", []any{"CREATE", "CODE", func() {
 		// overwrite default behavior of CREATE with DOCOL
 		latest := f.heap[LATESTp].(pWord)
@@ -463,6 +467,14 @@ func (f *Forth) Init() {
 		f.IncHere(1)
 		f.next()
 	}, "["})
+
+	// Halt program if not in compile mode
+	f.NewWord("?COMPILE", []any{"STATE", "@", "CODE", func() {
+		if f.stack.Pop().(int) == 0 {
+			panic("compile-only word")
+		}
+		f.next()
+	}})
 
 	f.NewInterpretWord()
 
