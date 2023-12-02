@@ -59,19 +59,34 @@ func (f *Forth) HeapDump() string {
 	return sb.String()
 }
 
+// GetNextWord returns the name of the word, which is currently executed by going up in the heap
+func (f *Forth) GetNextWord(pw pWord) string {
+	for i := int(pw); i >= 0; i-- {
+		if w, ok := f.heap[i].(*Word); ok {
+			return w.name
+		}
+	}
+	return "unknown"
+}
+
 func (f *Forth) GetCallStack() string {
 	var sb strings.Builder
-	if f.currentProgramWord > 0 && f.currentProgramWord < pWord(len(f.heap)) {
+	if f.isWithinHeap(f.currentProgramWord) {
 		if w, ok := f.heap[f.currentProgramWord].(*Word); ok {
-			sb.WriteString(fmt.Sprintf("    0x%04x: '%s'\n", uint(f.currentProgramWord), w.name))
+			sb.WriteString(fmt.Sprintf("    0x%04x: '%s' at '%s'\n",
+				uint(f.currentProgramAddress),
+				f.GetNextWord(pWord(f.currentProgramAddress)),
+				w.name))
 		}
 	}
 	for i := len((*f).returnStack) - 1; i >= 0; i-- {
 		if wp, ok1 := ((*f).returnStack[i]).(pWord); ok1 {
 			sb.WriteString(fmt.Sprintf("    0x%04x: ", uint(wp)))
-			if wp >= 0 && wp < pWord(len(f.heap)) {
-				if w, ok2 := f.heap[uint(wp)].(*Word); ok2 {
-					sb.WriteString(w.name)
+			if f.isWithinHeap(wp) {
+				if wp2, ok2 := f.heap[uint(wp)].(pWord); ok2 {
+					if w, ok3 := f.heap[uint(wp2)].(*Word); ok3 {
+						sb.WriteString(fmt.Sprintf("'%s' at '%s'", f.GetNextWord(wp), w.name))
+					}
 				} else {
 					sb.WriteString(" Unknown word")
 				}
@@ -88,7 +103,8 @@ func (f *Forth) GetCallStack() string {
 // Be very careful, as this can be executed in an recover cycle
 func (f *Forth) State() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Program address 0x%04x\n", f.currentProgramAddress))
+	sb.WriteString(fmt.Sprintf("Instruction pointer: 0x%04x\n", f.currentProgramAddress))
+	sb.WriteString(fmt.Sprintf("Current word: 0x%04x\n", uint(f.currentProgramWord)))
 	sb.WriteString("Stack: " + f.stack.ToString() + "\n")
 	sb.WriteString("Return Stack: " + f.returnStack.ToString() + "\n")
 	sb.WriteString("Stack Trace: \n" + f.GetCallStack() + "\n")

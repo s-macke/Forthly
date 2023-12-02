@@ -9,8 +9,6 @@ import (
 	"runtime/debug"
 )
 
-type any interface{}
-
 // Forth contains the forth environment
 type Forth struct {
 	stack       stack
@@ -50,6 +48,10 @@ func NewForth(_debug bool) *Forth {
 	return f
 }
 
+func (f *Forth) isWithinHeap(address pWord) bool {
+	return address >= 0 && int(address) < len(f.heap)
+}
+
 func (f *Forth) next() {
 	f.currentProgramAddress++
 }
@@ -62,7 +64,7 @@ func (f *Forth) Reset() {
 	f.currentProgramAddress = here // QUIT should never return
 }
 
-func errorHandler(r interface{}) error {
+func errorHandler(r any) error {
 	switch r.(type) {
 	case string:
 		return errors.New(r.(string))
@@ -81,7 +83,6 @@ func (f *Forth) Exec(command string) (result string, err error) {
 // ExecLoops compiles the given command and runs it for maxLoops iterations
 // -1 for infinite loops
 func (f *Forth) ExecLoops(command string, maxLoops int) (result string, err error) {
-	command += "\n"
 	defer func() {
 		if r := recover(); r != nil {
 			if f.debug {
@@ -90,10 +91,10 @@ func (f *Forth) ExecLoops(command string, maxLoops int) (result string, err erro
 			}
 			result = f.output
 			err = errorHandler(r)
-			f.Reset()
 		}
 	}()
 
+	command += "\n"
 	// main loop, just exit in case of the blocking KEY word
 	f.output = ""
 	f.input = []rune(command)
@@ -125,6 +126,7 @@ func (f *Forth) CmdLine() {
 		if err != nil {
 			fmt.Printf("Error: %s\n", err)
 			fmt.Println(f.State())
+			f.Reset() // finally reset
 		}
 	}
 }
