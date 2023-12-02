@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"forthly/forth"
+	"strings"
 	"syscall/js"
 )
 
