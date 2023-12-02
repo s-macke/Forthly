@@ -51,7 +51,7 @@ func (s *stack) ToString() string {
 	sb.WriteString("[")
 	for i := 0; i < len(*s); i++ {
 		if (*s)[i] == nil {
-			sb.WriteString("nil ")
+			sb.WriteString("nil")
 		} else {
 			sb.WriteString(fmt.Sprint((*s)[i]) + " (" + reflect.TypeOf((*s)[i]).Name() + ")")
 		}
