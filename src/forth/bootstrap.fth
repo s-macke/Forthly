@@ -81,6 +81,15 @@
     1 &HERE +!    \ increment HERE pointer by 1 byte
 ;
 
+\ array operations
+: ALLOT	            \ ( n -- addr )
+    HERE SWAP       \ ( here n )
+    &HERE +!        \ ( adds n to HERE, after this the old value of HERE is still on the stack )
+;
+
+: BUFFER  \ ( n -- )
+    CREATE ALLOT ;
+
 \ Variables and constant )
 
 : VARIABLE CREATE 0 , ;

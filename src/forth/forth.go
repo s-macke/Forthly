@@ -75,6 +75,12 @@ func errorHandler(r interface{}) error {
 
 // Exec compiles the given command and runs it
 func (f *Forth) Exec(command string) (result string, err error) {
+	return f.ExecLoops(command, -1)
+}
+
+// ExecLoops compiles the given command and runs it for maxLoops iterations
+// -1 for infinite loops
+func (f *Forth) ExecLoops(command string, maxLoops int) (result string, err error) {
 	command += "\n"
 	defer func() {
 		if r := recover(); r != nil {
@@ -92,10 +98,15 @@ func (f *Forth) Exec(command string) (result string, err error) {
 	f.output = ""
 	f.input = []rune(command)
 	f.expectInput = false
+	loops := 0
 	for !f.expectInput {
 		if f.debug {
 			f.PrintExecuteState()
 		}
+		if maxLoops != -1 && loops > maxLoops {
+			panic("max loops exceeded")
+		}
+		loops++
 		f.currentProgramWord = f.heap[f.currentProgramAddress].(pWord)
 		// indirect threading
 		f.heap[f.currentProgramWord+1].(func())()

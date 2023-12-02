@@ -19,6 +19,10 @@ func (s *stack) Size() int {
 
 // Push a new value onto the stack
 func (s *stack) Push(str any) {
+	if s.Size() > 1024 {
+		panic("stack overflow")
+	}
+
 	*s = append(*s, str) // Simply append the new value to the end of the stack
 }
 
@@ -46,7 +50,11 @@ func (s *stack) ToString() string {
 	var sb strings.Builder
 	sb.WriteString("[")
 	for i := 0; i < len(*s); i++ {
-		sb.WriteString(fmt.Sprint((*s)[i]) + " (" + reflect.TypeOf((*s)[i]).Name() + ")")
+		if (*s)[i] == nil {
+			sb.WriteString("nil ")
+		} else {
+			sb.WriteString(fmt.Sprint((*s)[i]) + " (" + reflect.TypeOf((*s)[i]).Name() + ")")
+		}
 		if i < len(*s)-1 {
 			sb.WriteString(", ")
 		}
