@@ -22,7 +22,7 @@ func execFunc(this js.Value, args []js.Value) (out any) {
 	command := args[0].String()
 	command = strings.ReplaceAll(command, "\r\n", "\n")
 	f := forth.NewForth(false)
-	result, err = f.ExecLoops(command, 10000)
+	result, err = f.ExecLoops(command, 100000)
 	if err != nil {
 		result += "\n" + "Error: " + err.Error() + "\n"
 		result += f.State()
