@@ -168,6 +168,8 @@
 : '(' [CHAR] ( ;
 : ')' [CHAR] ) ;
 : '"' [CHAR] " ;
+: '.' [CHAR] . ;
+: '+' [CHAR] + ;
 
 \ BEGIN UNTIL CONTROL STRUCTURE
 

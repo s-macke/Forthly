@@ -163,6 +163,26 @@ func TestUnless(t *testing.T) {
 	assertStackEmpty(t, f)
 }
 
+func TestR(t *testing.T) {
+	f := NewForth(false)
+	result, _ := f.Exec("1 >R")
+	assertEqual(t, result, "")
+	assertStackEmpty(t, f)
+	result, _ = f.Exec("R> .")
+	assertEqual(t, result, "1")
+	assertStackEmpty(t, f)
+
+	result, _ = f.Exec("4 >R R@ R@ . .")
+	assertEqual(t, result, "4 4")
+	assertStackEmpty(t, f)
+
+	result, _ = f.Exec(": rtest 1 >R 2 >R R> R> ;")
+	result, _ = f.Exec("3 rtest . . .")
+	assertEqual(t, result, "1 2 3")
+	assertStackEmpty(t, f)
+}
+
+// from https://forth-standard.org/standard/core/CASE
 func TestCase(t *testing.T) {
 	f := NewForth(false)
 	result, _ := f.Exec(`
@@ -187,6 +207,38 @@ func TestCase(t *testing.T) {
 	assertStackEmpty(t, f)
 }
 
+func TestCase2(t *testing.T) {
+	f := NewForth(false)
+	result, _ := f.Exec(`
+       : cs2 >R CASE
+   -1 OF CASE R@ 1 OF 100 ENDOF
+                2 OF 200 ENDOF
+                >R -300 R>
+        ENDCASE
+     ENDOF
+   -2 OF CASE R@ 1 OF -99 ENDOF
+                >R -199 R>
+        ENDCASE
+     ENDOF
+     >R 299 R>
+   ENDCASE R> DROP ;`)
+
+	result, _ = f.Exec("-1 1 cs2 .")
+	assertEqual(t, result, "100")
+	assertStackEmpty(t, f)
+	result, _ = f.Exec("-1 2 cs2 .")
+	assertEqual(t, result, "200")
+	result, _ = f.Exec("-1 3 cs2 .")
+	assertEqual(t, result, "-300")
+	result, _ = f.Exec("-2 1 cs2 .")
+	assertEqual(t, result, "-99")
+	result, _ = f.Exec("-2 2 cs2 .")
+	assertEqual(t, result, "-199")
+	result, _ = f.Exec("0 2 cs2 .")
+	assertEqual(t, result, "299")
+	assertStackEmpty(t, f)
+}
+
 func TestChar(t *testing.T) {
 	f := NewForth(false)
 	result, _ := f.Exec("CHAR ! .")
@@ -196,6 +248,11 @@ func TestChar(t *testing.T) {
 	result, _ = f.Exec("'(' . ')' .")
 	assertEqual(t, result, "40 41")
 	assertStackEmpty(t, f)
+
+	result, _ = f.Exec("'.' . '+' .")
+	assertEqual(t, result, "46 43")
+	assertStackEmpty(t, f)
+
 }
 
 func TestComment(t *testing.T) {
@@ -266,4 +323,11 @@ func TestErase(t *testing.T) {
 			t.Errorf("assert failed with: BUF[%d] is not zero, but %v", i, f.heap[int(address)+i])
 		}
 	}
+}
+
+func TestTrimString(t *testing.T) {
+	f := NewForth(false)
+	result, _ := f.Exec(`2 5 2 /STRING . .`)
+	assertStackEmpty(t, f)
+	assertEqual(t, result, "3 4")
 }
