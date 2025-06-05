@@ -15,7 +15,7 @@
 : nip   swap drop ;                 \ ( a b -- b )
 
 \ Copy x from the return stack to the data stack.
-: r@ 0 rpick ;
+: r@ 1 rpick ; \ this is a word, so the top of the return stack is not the intended value. Hence 1
 
 \ read write operations
 
@@ -82,9 +82,10 @@
 ;
 
 \ array operations
-: ALLOT	            \ ( n -- addr )
+: ALLOT	            \ ( n -- )
     HERE SWAP       \ ( here n )
     &HERE +!        \ ( adds n to HERE, after this the old value of HERE is still on the stack )
+    DROP
 ;
 
 : BUFFER  \ ( n -- )
@@ -367,6 +368,10 @@ drop
     DROP
 ;
 
+\ https://forth-standard.org/standard/string/DivSTRING
+: /STRING
+    DUP >R - SWAP R> + SWAP ;
+
 \ Switch case
 
 : CASE IMMEDIATE
@@ -406,6 +411,7 @@ drop
     [compile] literal   \ call literal
 ;
 
+\ TODO really immediate?
 : ABORT" IMMEDIATE
   ." Abort: "
   [COMPILE] s"
@@ -413,3 +419,26 @@ drop
   cr
   halt
 ;
+
+\ TODO is this correct?
+: ABORT
+  cr ." Abort" cr
+  quit
+;
+
+
+\ FILL and ERASE
+
+: FILL ( c-addr n char -- )
+    >R
+    BEGIN
+        DUP 0<> \ check if n is not zero
+    WHILE
+      OVER
+      R@ SWAP C!
+      1 /STRING
+    REPEAT
+    R> 2DROP DROP ;
+
+: ERASE ( addr u -- )
+  0 FILL ;

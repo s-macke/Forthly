@@ -251,3 +251,19 @@ func TestFactorial(t *testing.T) {
 	assertEqual(t, result, "40320")
 	assertStackEmpty(t, f)
 }
+
+func TestErase(t *testing.T) {
+	f := NewForth(false)
+	result, _ := f.Exec(`  
+  CREATE BUF 20 ALLOT  
+  BUF 20 ERASE
+    `)
+	assertStackEmpty(t, f)
+	assertEqual(t, result, "")
+	address := f.Find("BUF")
+	for i := 0; i < 20; i++ {
+		if f.heap[int(address)+i+2].(int) != 0 {
+			t.Errorf("assert failed with: BUF[%d] is not zero, but %v", i, f.heap[int(address)+i])
+		}
+	}
+}
