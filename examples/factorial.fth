@@ -6,5 +6,5 @@
   then
 ;
 
-\ show the faculty of 5
+\ show the factorial of 5
 5 fac .
